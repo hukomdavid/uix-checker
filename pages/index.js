@@ -86,14 +86,12 @@ export default function Home() {
             </button>
           </form>
 
-          {/* Loading State */}
+          {/* Loading State with Steps */}
           {loading && (
-            <div className="mt-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">Mohon tunggu 30-60 detik...</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Kami sedang menganalisis struktur, konten, dan aksesibilitas website Anda
-              </p>
+            <div className="mt-8">
+              <div className="max-w-md mx-auto">
+                <LoadingProgress />
+              </div>
             </div>
           )}
 
@@ -270,6 +268,136 @@ export default function Home() {
               </div>
             </div>
 
+            {/* PageSpeed Performance (if available) */}
+            {result.performance && (
+              <div className="bg-white rounded-2xl shadow-xl p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  ⚡ Performance (PageSpeed Insights)
+                </h2>
+                
+                {/* Overall Performance Score */}
+                <div className="text-center mb-8 pb-8 border-b">
+                  <div className="inline-block">
+                    <div className="relative">
+                      <svg className="w-40 h-40" viewBox="0 0 200 200">
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke="#e5e7eb"
+                          strokeWidth="12"
+                        />
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke={getScoreColor(result.performance.overall)}
+                          strokeWidth="12"
+                          strokeDasharray={`${(result.performance.overall / 100) * 502} 502`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 100 100)"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-4xl font-bold text-gray-900">
+                          {result.performance.overall}
+                        </div>
+                        <div className="text-xs text-gray-500">Performance</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile vs Desktop */}
+                {result.performance.mobile && result.performance.desktop && (
+                  <div className="grid md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-blue-50 rounded-lg p-6">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                        📱 Mobile
+                      </h3>
+                      <div className="space-y-2">
+                        <PerformanceBar label="Performance" score={result.performance.mobile.performance} />
+                        <PerformanceBar label="Accessibility" score={result.performance.mobile.accessibility} />
+                        <PerformanceBar label="Best Practices" score={result.performance.mobile.bestPractices} />
+                        <PerformanceBar label="SEO" score={result.performance.mobile.seo} />
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                        💻 Desktop
+                      </h3>
+                      <div className="space-y-2">
+                        <PerformanceBar label="Performance" score={result.performance.desktop.performance} />
+                        <PerformanceBar label="Accessibility" score={result.performance.desktop.accessibility} />
+                        <PerformanceBar label="Best Practices" score={result.performance.desktop.bestPractices} />
+                        <PerformanceBar label="SEO" score={result.performance.desktop.seo} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Key Metrics */}
+                {result.performance.metrics && (
+                  <div className="mb-8">
+                    <h3 className="font-semibold text-gray-900 mb-4">📊 Core Web Vitals</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <MetricCard 
+                        label="FCP"
+                        value={formatTime(result.performance.metrics.fcp)}
+                        description="First Contentful Paint"
+                      />
+                      <MetricCard 
+                        label="LCP"
+                        value={formatTime(result.performance.metrics.lcp)}
+                        description="Largest Contentful Paint"
+                      />
+                      <MetricCard 
+                        label="CLS"
+                        value={result.performance.metrics.cls?.toFixed(3) || '0'}
+                        description="Cumulative Layout Shift"
+                      />
+                      <MetricCard 
+                        label="TBT"
+                        value={formatTime(result.performance.metrics.tbt)}
+                        description="Total Blocking Time"
+                      />
+                      <MetricCard 
+                        label="SI"
+                        value={formatTime(result.performance.metrics.si)}
+                        description="Speed Index"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Opportunities */}
+                {result.performance.opportunities && result.performance.opportunities.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-4">💡 Peluang Peningkatan</h3>
+                    <div className="space-y-3">
+                      {result.performance.opportunities.map((opp, idx) => (
+                        <div key={idx} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-1">{opp.title}</h4>
+                          <p className="text-sm text-gray-600">{opp.description}</p>
+                          {opp.savings > 0 && (
+                            <p className="text-xs text-yellow-700 mt-2">
+                              Potential savings: ~{formatTime(opp.savings)}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 mt-6 text-center">
+                  Data from Google PageSpeed Insights
+                </p>
+              </div>
+            )}
+
             {/* Issues */}
             {result.analysis.issues.length > 0 && (
               <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -319,6 +447,127 @@ export default function Home() {
           <p className="mt-2">Powered by Gemini AI & Next.js</p>
         </footer>
       </main>
+    </div>
+  );
+}
+
+// Performance Bar Component
+function PerformanceBar({ label, score }) {
+  const getColor = (score) => {
+    if (score >= 90) return 'bg-green-500';
+    if (score >= 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-gray-600">{label}</span>
+        <span className="font-semibold">{score}</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <div 
+          className={`h-2 rounded-full ${getColor(score)}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Metric Card Component
+function MetricCard({ label, value, description }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-4 text-center">
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className="text-xl font-bold text-gray-900">{value}</div>
+      <div className="text-xs text-gray-500 mt-1">{description}</div>
+    </div>
+  );
+}
+
+// Format time helper
+function formatTime(ms) {
+  if (!ms) return 'N/A';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+// Loading Progress Component
+function LoadingProgress() {
+  const [currentStep, setCurrentStep] = useState(0);
+  
+  const steps = [
+    { icon: '🔍', label: 'Mengambil data website...', duration: 3000 },
+    { icon: '📊', label: 'Menganalisis struktur halaman...', duration: 5000 },
+    { icon: '🎨', label: 'Memeriksa layout & hierarki...', duration: 8000 },
+    { icon: '♿', label: 'Mengevaluasi aksesibilitas...', duration: 12000 },
+    { icon: '🤖', label: 'AI sedang menganalisis...', duration: 20000 },
+    { icon: '💡', label: 'Menyusun rekomendasi...', duration: 25000 },
+    { icon: '✨', label: 'Menyelesaikan laporan...', duration: 30000 },
+  ];
+
+  useState(() => {
+    const timers = steps.map((step, index) => 
+      setTimeout(() => setCurrentStep(index), step.duration)
+    );
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, []);
+
+  return (
+    <div className="bg-white rounded-xl p-8 shadow-lg">
+      <div className="text-center mb-6">
+        <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+      </div>
+      
+      <div className="space-y-4">
+        {steps.map((step, index) => (
+          <div 
+            key={index}
+            className={`flex items-center transition-all duration-500 ${
+              index <= currentStep ? 'opacity-100' : 'opacity-30'
+            }`}
+          >
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all duration-500 ${
+              index < currentStep 
+                ? 'bg-green-100' 
+                : index === currentStep 
+                ? 'bg-blue-100 scale-110' 
+                : 'bg-gray-100'
+            }`}>
+              {index < currentStep ? '✓' : step.icon}
+            </div>
+            <div className="ml-4 flex-1">
+              <p className={`font-medium transition-all duration-500 ${
+                index === currentStep ? 'text-blue-600 text-lg' : 'text-gray-600'
+              }`}>
+                {step.label}
+              </p>
+            </div>
+            {index === currentStep && (
+              <div className="flex-shrink-0">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-500">
+          Estimasi waktu: <span className="font-semibold">30-60 detik</span>
+        </p>
+        <div className="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 transition-all duration-1000 ease-linear"
+            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
