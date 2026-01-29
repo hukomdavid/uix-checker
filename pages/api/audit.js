@@ -1,6 +1,7 @@
 import { crawlURL } from '../../lib/crawler.js';
 import { calculateScores } from '../../lib/scorer.js';
 import { runAIAnalysis } from '../../lib/gemini.js';
+import { getCombinedPageSpeedScore } from '../../lib/pagespeed.js';
 
 /**
  * POST /api/audit
@@ -55,8 +56,23 @@ export default async function handler(req, res) {
     console.log('🔢 Step 2: Calculating scores...');
     const scoringResult = calculateScores(crawledData);
     
-    // STEP 3: AI Analysis (3 brains: Analyzer, Storyteller, Recommender)
-    console.log('🤖 Step 3: Running AI analysis...');
+    // STEP 3: PageSpeed (Optional, non-blocking)
+    console.log('⚡ Step 3: Fetching PageSpeed (optional)...');
+    let pageSpeedResult = null;
+    try {
+      // Try to get PageSpeed, but don't fail if it errors
+      pageSpeedResult = await getCombinedPageSpeedScore(url);
+      if (pageSpeedResult) {
+        console.log('✅ PageSpeed data retrieved');
+      } else {
+        console.log('⚠️  PageSpeed not available, continuing without it');
+      }
+    } catch (error) {
+      console.log('⚠️  PageSpeed fetch failed, continuing without it:', error.message);
+    }
+    
+    // STEP 4: AI Analysis (3 brains: Analyzer, Storyteller, Recommender)
+    console.log('🤖 Step 4: Running AI analysis...');
     const aiResult = await runAIAnalysis(crawledData, scoringResult);
     
     // Combine everything
@@ -67,6 +83,15 @@ export default async function handler(req, res) {
       
       // Scores
       scores: scoringResult.scores,
+      
+      // PageSpeed (if available)
+      performance: pageSpeedResult ? {
+        overall: pageSpeedResult.overallScore,
+        mobile: pageSpeedResult.mobile?.scores,
+        desktop: pageSpeedResult.desktop?.scores,
+        metrics: pageSpeedResult.mobile?.metrics || pageSpeedResult.desktop?.metrics,
+        opportunities: pageSpeedResult.mobile?.opportunities || pageSpeedResult.desktop?.opportunities || []
+      } : null,
       
       // AI Results
       analysis: aiResult.analysis,
